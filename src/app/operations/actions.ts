@@ -1,0 +1,45 @@
+"use server";
+// 成员C：领用与归还
+import { prisma } from "@/lib/prisma";
+import { withAudit } from "@/lib/audit";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+const OpSchema = z.object({
+  chemicalId: z.coerce.number(),
+  opType: z.enum(["领用", "归还", "废弃"]),
+  operator: z.string().min(1),
+  quantity: z.coerce.number().positive(),
+});
+
+// 领用/归还/废弃 + 自动计算当前库存
+export const doOperation = withAudit("改", "领用归还", async (form: FormData) => {
+  const { chemicalId, opType, operator, quantity } = OpSchema.parse(
+    Object.fromEntries(form),
+  );
+
+  const chem = await prisma.chemical.findUniqueOrThrow({ where: { id: chemicalId } });
+  if ((opType === "领用" || opType === "废弃") && chem.currentQuantity < quantity) {
+    throw new Error(`库存不足，当前仅 ${chem.currentQuantity}${chem.unit}`);
+  }
+  const delta = opType === "归还" ? quantity : -quantity;
+
+  await prisma.$transaction([
+    prisma.chemical.update({
+      where: { id: chemicalId },
+      data: { currentQuantity: { increment: delta } },
+    }),
+    prisma.opLog.create({ data: { chemicalId, opType, operator, quantity } }),
+  ]);
+  revalidatePath("/operations");
+  revalidatePath("/warning");
+  revalidatePath("/chemicals");
+});
+
+export async function listOperations() {
+  return prisma.opLog.findMany({
+    include: { chemical: true },
+    orderBy: { opTime: "desc" },
+    take: 100,
+  });
+}

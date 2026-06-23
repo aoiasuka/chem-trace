@@ -1,0 +1,53 @@
+"use server";
+// 成员A：危化品基础信息库与 MSDS
+import { prisma } from "@/lib/prisma";
+import { withAudit } from "@/lib/audit";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+const ChemicalSchema = z.object({
+  name: z.string().min(1, "名称必填"),
+  casNo: z.string().optional(),
+  category: z.enum(["易制毒", "易制爆", "其他"]),
+  hazardDesc: z.string().optional(),
+  msdsUrl: z.string().optional(),
+  safeThreshold: z.coerce.number().min(0),
+  unit: z.string().min(1),
+});
+
+// 查询（名称/CAS/类别检索）
+export async function listChemicals(keyword?: string, category?: string) {
+  return prisma.chemical.findMany({
+    where: {
+      AND: [
+        keyword
+          ? { OR: [{ name: { contains: keyword } }, { casNo: { contains: keyword } }] }
+          : {},
+        category ? { category } : {},
+      ],
+    },
+    orderBy: { id: "desc" },
+  });
+}
+
+// 新增
+export const createChemical = withAudit("增", "基础信息", async (form: FormData) => {
+  const data = ChemicalSchema.parse(Object.fromEntries(form));
+  await prisma.chemical.create({ data });
+  revalidatePath("/chemicals");
+});
+
+// 修改
+export const updateChemical = withAudit("改", "基础信息", async (form: FormData) => {
+  const id = Number(form.get("id"));
+  const data = ChemicalSchema.parse(Object.fromEntries(form));
+  await prisma.chemical.update({ where: { id }, data });
+  revalidatePath("/chemicals");
+});
+
+// 删除
+export const deleteChemical = withAudit("删", "基础信息", async (form: FormData) => {
+  const id = Number(form.get("id"));
+  await prisma.chemical.delete({ where: { id } });
+  revalidatePath("/chemicals");
+});
