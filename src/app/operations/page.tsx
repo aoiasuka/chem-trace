@@ -2,49 +2,89 @@
 import { listChemicals } from "../chemicals/actions";
 import { doOperation, listOperations } from "./actions";
 import OperationForm from "./OperationForm";
+import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+function OpBadge({ type }: { type: string }) {
+  if (type === "归还") return <Badge variant="success">{type}</Badge>;
+  if (type === "废弃") return <Badge variant="secondary">{type}</Badge>;
+  return <Badge variant="info">{type}</Badge>;
+}
 
 export default async function OperationsPage() {
   const chemicals = await listChemicals();
   const logs = await listOperations();
 
-  const badge = (t: string) =>
-    t === "归还"
-      ? "bg-emerald-100 text-emerald-700"
-      : t === "废弃"
-        ? "bg-gray-200 text-gray-700"
-        : "bg-indigo-100 text-indigo-700";
-
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-xl font-bold">领用与归还</h1>
+    <div className="space-y-6">
+      <PageHeader
+        title="领用与归还"
+        description="登记领用、归还、废弃流水，自动扣减或回补库存"
+      />
 
       <OperationForm chemicals={chemicals} action={doOperation} />
 
-      <h2 className="font-medium">操作流水</h2>
-      <table className="w-full border bg-white text-sm">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="p-2">时间</th><th className="p-2">危化品</th>
-            <th className="p-2">类型</th><th className="p-2">数量</th><th className="p-2">领用人</th>
-          </tr>
-        </thead>
-        <tbody>
-          {logs.map((l) => (
-            <tr key={l.id} className="border-t text-center">
-              <td className="p-2">{l.opTime.toLocaleString("zh-CN")}</td>
-              <td className="p-2">{l.chemical.name}</td>
-              <td className="p-2">
-                <span className={`rounded px-2 py-0.5 ${badge(l.opType)}`}>{l.opType}</span>
-              </td>
-              <td className="p-2">{l.quantity} {l.chemical.unit}</td>
-              <td className="p-2">{l.operator}</td>
-            </tr>
-          ))}
-          {logs.length === 0 && (
-            <tr><td colSpan={5} className="p-4 text-center text-gray-400">暂无流水</td></tr>
-          )}
-        </tbody>
-      </table>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">操作流水</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>时间</TableHead>
+                <TableHead>危化品</TableHead>
+                <TableHead className="text-center">类型</TableHead>
+                <TableHead className="text-center">数量</TableHead>
+                <TableHead>领用人</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {logs.map((l) => (
+                <TableRow key={l.id}>
+                  <TableCell className="whitespace-nowrap text-muted-foreground">
+                    {l.opTime.toLocaleString("zh-CN")}
+                  </TableCell>
+                  <TableCell className="font-medium">{l.chemical.name}</TableCell>
+                  <TableCell className="text-center">
+                    <OpBadge type={l.opType} />
+                  </TableCell>
+                  <TableCell className="text-center tabular-nums">
+                    {l.quantity} {l.chemical.unit}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {l.operator}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {logs.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    暂无流水
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

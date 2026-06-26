@@ -1,5 +1,21 @@
 // 成员D：库存预警页面（低于安全阈值标红）
+import { AlertTriangle, CheckCircle2, ShieldAlert } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 export default async function WarningPage() {
   const all = await prisma.chemical.findMany({ orderBy: { id: "asc" } });
@@ -7,47 +23,81 @@ export default async function WarningPage() {
   const warnCount = list.filter((c) => c.warning).length;
 
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-xl font-bold">库存预警</h1>
+    <div className="space-y-6">
+      <PageHeader
+        title="库存预警"
+        description="实时监控危化品库存是否低于安全阈值"
+      />
 
-      {warnCount > 0 ? (
-        <div className="rounded bg-red-100 px-4 py-2 text-red-700">
-          ⚠️ 当前有 {warnCount} 种危化品库存低于安全阈值，请及时补充！
-        </div>
-      ) : (
-        <div className="rounded bg-emerald-100 px-4 py-2 text-emerald-700">
-          ✅ 所有危化品库存均在安全阈值以上。
-        </div>
-      )}
+      <div
+        className={cn(
+          "flex items-center gap-3 rounded-lg border p-4",
+          warnCount > 0
+            ? "border-destructive/30 bg-destructive/5 text-destructive"
+            : "border-success/30 bg-success/5 text-success",
+        )}
+      >
+        {warnCount > 0 ? (
+          <ShieldAlert className="h-5 w-5 shrink-0" />
+        ) : (
+          <CheckCircle2 className="h-5 w-5 shrink-0" />
+        )}
+        <p className="text-sm font-medium">
+          {warnCount > 0
+            ? `当前有 ${warnCount} 种危化品库存低于安全阈值，请及时补充。`
+            : "所有危化品库存均在安全阈值以上。"}
+        </p>
+      </div>
 
-      <table className="w-full border bg-white text-sm">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="p-2 text-left">名称</th><th className="p-2">类别</th>
-            <th className="p-2">当前库存</th><th className="p-2">安全阈值</th><th className="p-2">状态</th>
-          </tr>
-        </thead>
-        <tbody>
-          {list.map((c) => (
-            <tr
-              key={c.id}
-              className={c.warning ? "border-t bg-red-100 font-semibold text-red-700" : "border-t"}
-            >
-              <td className="p-2">{c.name}</td>
-              <td className="p-2 text-center">{c.category}</td>
-              <td className="p-2 text-center">{c.currentQuantity} {c.unit}</td>
-              <td className="p-2 text-center">{c.safeThreshold} {c.unit}</td>
-              <td className="p-2 text-center">
-                {c.warning ? (
-                  <span className="rounded bg-red-500 px-2 py-0.5 text-white">⚠️ 低于阈值</span>
-                ) : (
-                  <span className="rounded bg-emerald-500 px-2 py-0.5 text-white">正常</span>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>名称</TableHead>
+                <TableHead className="text-center">类别</TableHead>
+                <TableHead className="text-center">当前库存</TableHead>
+                <TableHead className="text-center">安全阈值</TableHead>
+                <TableHead className="text-center">状态</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {list.map((c) => (
+                <TableRow
+                  key={c.id}
+                  className={c.warning ? "bg-destructive/5" : undefined}
+                >
+                  <TableCell className="font-medium">{c.name}</TableCell>
+                  <TableCell className="text-center text-muted-foreground">
+                    {c.category}
+                  </TableCell>
+                  <TableCell
+                    className={cn(
+                      "text-center font-medium tabular-nums",
+                      c.warning && "text-destructive",
+                    )}
+                  >
+                    {c.currentQuantity} {c.unit}
+                  </TableCell>
+                  <TableCell className="text-center tabular-nums text-muted-foreground">
+                    {c.safeThreshold} {c.unit}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {c.warning ? (
+                      <Badge variant="destructive">
+                        <AlertTriangle className="h-3 w-3" />
+                        低于阈值
+                      </Badge>
+                    ) : (
+                      <Badge variant="success">正常</Badge>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

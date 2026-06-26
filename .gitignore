@@ -46,3 +46,6 @@ next-env.d.ts
 
 # prisma generated client (regenerated via postinstall: prisma generate)
 /src/generated
+
+# WorkBuddy workspace data
+/.workbuddy

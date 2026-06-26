@@ -12,25 +12,24 @@ const OpSchema = z.object({
   quantity: z.coerce.number().positive(),
 });
 
-// 领用/归还/废弃 + 自动计算当前库存
+// 领用/归还/废弃 + 自动计算当前库存（事务内校验，防并发超扣）
 export const doOperation = withAudit("改", "领用归还", async (form: FormData) => {
   const { chemicalId, opType, operator, quantity } = OpSchema.parse(
     Object.fromEntries(form),
   );
 
-  const chem = await prisma.chemical.findUniqueOrThrow({ where: { id: chemicalId } });
-  if ((opType === "领用" || opType === "废弃") && chem.currentQuantity < quantity) {
-    throw new Error(`库存不足，当前仅 ${chem.currentQuantity}${chem.unit}`);
-  }
-  const delta = opType === "归还" ? quantity : -quantity;
-
-  await prisma.$transaction([
-    prisma.chemical.update({
+  await prisma.$transaction(async (tx) => {
+    const chem = await tx.chemical.findUniqueOrThrow({ where: { id: chemicalId } });
+    if ((opType === "领用" || opType === "废弃") && chem.currentQuantity < quantity) {
+      throw new Error(`库存不足，当前仅 ${chem.currentQuantity}${chem.unit}`);
+    }
+    const delta = opType === "归还" ? quantity : -quantity;
+    await tx.chemical.update({
       where: { id: chemicalId },
       data: { currentQuantity: { increment: delta } },
-    }),
-    prisma.opLog.create({ data: { chemicalId, opType, operator, quantity } }),
-  ]);
+    });
+    await tx.opLog.create({ data: { chemicalId, opType, operator, quantity } });
+  });
   revalidatePath("/operations");
   revalidatePath("/warning");
   revalidatePath("/chemicals");

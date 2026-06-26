@@ -1,5 +1,33 @@
 // 成员E：操作审计日志页面
+import { Filter, ScrollText } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+function ActionBadge({ action }: { action: string }) {
+  if (action === "增") return <Badge variant="success">{action}</Badge>;
+  if (action === "删") return <Badge variant="destructive">{action}</Badge>;
+  if (action === "改") return <Badge variant="warning">{action}</Badge>;
+  return <Badge variant="secondary">{action}</Badge>;
+}
 
 export default async function AuditPage({
   searchParams,
@@ -18,49 +46,110 @@ export default async function AuditPage({
   });
 
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-xl font-bold">操作审计日志</h1>
+    <div className="space-y-6">
+      <PageHeader
+        title="操作审计日志"
+        description="按操作人、模块、操作类型筛选历史记录"
+      />
 
-      <form method="get" className="flex flex-wrap gap-2">
-        <input name="operator" defaultValue={q.operator} placeholder="操作人" className="rounded border px-3 py-1.5" />
-        <select name="module" defaultValue={q.module ?? ""} className="rounded border px-3 py-1.5">
-          <option value="">全部模块</option>
-          <option value="基础信息">基础信息</option>
-          <option value="入库">入库</option>
-          <option value="领用归还">领用归还</option>
-        </select>
-        <select name="action" defaultValue={q.action ?? ""} className="rounded border px-3 py-1.5">
-          <option value="">全部操作</option>
-          <option value="增">增</option>
-          <option value="删">删</option>
-          <option value="改">改</option>
-          <option value="查">查</option>
-        </select>
-        <button className="rounded bg-slate-700 px-4 py-1.5 text-white">筛选</button>
-      </form>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Filter className="h-4 w-4" />
+            筛选
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form method="get" className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="operator">操作人</Label>
+              <Input
+                id="operator"
+                name="operator"
+                defaultValue={q.operator}
+                placeholder="操作人"
+              />
+            </div>
+            <div className="w-36 space-y-1.5">
+              <Label htmlFor="module">模块</Label>
+              <Select id="module" name="module" defaultValue={q.module ?? ""}>
+                <option value="">全部模块</option>
+                <option value="基础信息">基础信息</option>
+                <option value="入库">入库</option>
+                <option value="领用归还">领用归还</option>
+              </Select>
+            </div>
+            <div className="w-36 space-y-1.5">
+              <Label htmlFor="action">操作</Label>
+              <Select id="action" name="action" defaultValue={q.action ?? ""}>
+                <option value="">全部操作</option>
+                <option value="增">增</option>
+                <option value="删">删</option>
+                <option value="改">改</option>
+                <option value="查">查</option>
+              </Select>
+            </div>
+            <Button type="submit">
+              <Filter className="h-4 w-4" />
+              筛选
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
-      <table className="w-full border bg-white text-sm">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="p-2">时间</th><th className="p-2">操作人</th>
-            <th className="p-2">模块</th><th className="p-2">操作</th><th className="p-2 text-left">详情</th>
-          </tr>
-        </thead>
-        <tbody>
-          {logs.map((l) => (
-            <tr key={l.id} className="border-t">
-              <td className="p-2 text-center whitespace-nowrap">{l.opTime.toLocaleString("zh-CN")}</td>
-              <td className="p-2 text-center">{l.operator}</td>
-              <td className="p-2 text-center">{l.module}</td>
-              <td className="p-2 text-center">{l.action}</td>
-              <td className="p-2 max-w-md truncate" title={l.detail}>{l.detail}</td>
-            </tr>
-          ))}
-          {logs.length === 0 && (
-            <tr><td colSpan={5} className="p-4 text-center text-gray-400">暂无日志</td></tr>
-          )}
-        </tbody>
-      </table>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <ScrollText className="h-4 w-4" />
+            共 {logs.length} 条日志
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>时间</TableHead>
+                <TableHead>操作人</TableHead>
+                <TableHead className="text-center">模块</TableHead>
+                <TableHead className="text-center">操作</TableHead>
+                <TableHead>详情</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {logs.map((l) => (
+                <TableRow key={l.id}>
+                  <TableCell className="whitespace-nowrap text-muted-foreground">
+                    {l.opTime.toLocaleString("zh-CN")}
+                  </TableCell>
+                  <TableCell className="font-medium">{l.operator}</TableCell>
+                  <TableCell className="text-center text-muted-foreground">
+                    {l.module}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <ActionBadge action={l.action} />
+                  </TableCell>
+                  <TableCell
+                    className="max-w-md truncate text-muted-foreground"
+                    title={l.detail}
+                  >
+                    {l.detail}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {logs.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    暂无日志
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

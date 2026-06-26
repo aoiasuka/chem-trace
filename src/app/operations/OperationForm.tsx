@@ -1,6 +1,13 @@
 "use client";
 // 成员C：领用归还表单（含库存不足错误提示）
 import { useActionState } from "react";
+import { Loader2, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowRightLeft } from "lucide-react";
 
 type Chemical = { id: number; name: string; currentQuantity: number; unit: string };
 
@@ -24,26 +31,67 @@ export default function OperationForm({
   );
 
   return (
-    <form action={formAction} className="grid grid-cols-2 gap-3 rounded border bg-white p-4 md:grid-cols-4">
-      <select name="chemicalId" className="rounded border px-3 py-1.5" required>
-        <option value="">选择危化品</option>
-        {chemicals.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}（当前 {c.currentQuantity}{c.unit}）
-          </option>
-        ))}
-      </select>
-      <select name="opType" className="rounded border px-3 py-1.5">
-        <option value="领用">领用</option>
-        <option value="归还">归还</option>
-        <option value="废弃">废弃</option>
-      </select>
-      <input name="operator" placeholder="领用人/操作人" className="rounded border px-3 py-1.5" required />
-      <input name="quantity" type="number" step="0.01" placeholder="数量" className="rounded border px-3 py-1.5" required />
-      <button disabled={pending} className="col-span-2 rounded bg-indigo-600 px-4 py-1.5 text-white disabled:opacity-50 md:col-span-1">
-        {pending ? "提交中..." : "提交"}
-      </button>
-      {error && <p className="col-span-2 text-sm text-red-600 md:col-span-4">⚠️ {error}</p>}
-    </form>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <ArrowRightLeft className="h-4 w-4" />
+          登记领用 / 归还 / 废弃
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form action={formAction} className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="col-span-2 space-y-1.5 md:col-span-1">
+            <Label htmlFor="chemicalId">危化品</Label>
+            <Select id="chemicalId" name="chemicalId" required>
+              <option value="">选择危化品</option>
+              {chemicals.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}（当前 {c.currentQuantity}
+                  {c.unit}）
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="opType">类型</Label>
+            <Select id="opType" name="opType">
+              <option value="领用">领用</option>
+              <option value="归还">归还</option>
+              <option value="废弃">废弃</option>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="operator">领用人 / 操作人</Label>
+            <Input id="operator" name="operator" placeholder="领用人 / 操作人" required />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="quantity">数量</Label>
+            <Input
+              id="quantity"
+              name="quantity"
+              type="number"
+              step="0.01"
+              placeholder="数量"
+              required
+            />
+          </div>
+          <div className="col-span-2 md:col-span-4 md:flex md:justify-end">
+            <Button type="submit" disabled={pending}>
+              {pending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {pending ? "提交中…" : "提交"}
+            </Button>
+          </div>
+          {error && (
+            <p className="col-span-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive md:col-span-4">
+              ⚠ {error}
+            </p>
+          )}
+        </form>
+      </CardContent>
+    </Card>
   );
 }

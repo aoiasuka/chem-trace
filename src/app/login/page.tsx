@@ -1,46 +1,73 @@
 "use client";
 import { useActionState } from "react";
+import { FlaskConical, Loader2, LogIn } from "lucide-react";
 import { loginAction } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function LoginPage() {
   const [error, formAction, pending] = useActionState(loginAction, undefined);
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center">
-      <form
-        action={formAction}
-        className="w-80 rounded-lg bg-white p-8 shadow-md space-y-4"
-      >
-        <h1 className="text-center text-xl font-bold">危化品追溯系统登录</h1>
-        <div>
-          <label className="block text-sm mb-1">用户名</label>
-          <input
-            name="username"
-            defaultValue="admin"
-            className="w-full rounded border px-3 py-2"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm mb-1">密码</label>
-          <input
-            name="password"
-            type="password"
-            defaultValue="123456"
-            className="w-full rounded border px-3 py-2"
-            required
-          />
-        </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full rounded bg-slate-800 py-2 text-white hover:bg-slate-700 disabled:opacity-50"
-        >
-          {pending ? "登录中..." : "登 录"}
-        </button>
-        <p className="text-center text-xs text-gray-400">默认账号 admin / 123456</p>
-      </form>
+    <div className="flex min-h-[80vh] items-center justify-center px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="space-y-3 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <FlaskConical className="h-6 w-6" />
+          </div>
+          <div className="space-y-1">
+            <CardTitle className="text-lg">危化品追溯系统</CardTitle>
+            <CardDescription>登录以管理危化品全流程</CardDescription>
+          </div>
+        </CardHeader>
+        <form action={formAction}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">用户名</Label>
+              <Input
+                id="username"
+                name="username"
+                defaultValue="admin"
+                autoComplete="username"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">密码</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                defaultValue="123456"
+                autoComplete="current-password"
+                required
+              />
+            </div>
+            {error ? (
+              <p className="text-sm text-destructive">{error}</p>
+            ) : null}
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full" disabled={pending}>
+              {pending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <LogIn className="h-4 w-4" />
+              )}
+              {pending ? "登录中…" : "登 录"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
 }

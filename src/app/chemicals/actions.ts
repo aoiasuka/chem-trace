@@ -45,9 +45,16 @@ export const updateChemical = withAudit("改", "基础信息", async (form: Form
   revalidatePath("/chemicals");
 });
 
-// 删除
+// 删除（先清理关联的入库/操作记录，再删化学品）
 export const deleteChemical = withAudit("删", "基础信息", async (form: FormData) => {
   const id = Number(form.get("id"));
-  await prisma.chemical.delete({ where: { id } });
+  await prisma.$transaction([
+    prisma.stockIn.deleteMany({ where: { chemicalId: id } }),
+    prisma.opLog.deleteMany({ where: { chemicalId: id } }),
+    prisma.chemical.delete({ where: { id } }),
+  ]);
   revalidatePath("/chemicals");
+  revalidatePath("/stock-in");
+  revalidatePath("/operations");
+  revalidatePath("/warning");
 });
