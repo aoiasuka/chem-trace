@@ -1,6 +1,7 @@
-// 成员A：基础信息库页面
-import { Search, Plus } from "lucide-react";
-import { listChemicals, createChemical, deleteChemical } from "./actions";
+// 成员A：基础信息库页面（含分级预警 + 角色控制 + 库存调整）
+import { Search, Plus, ArrowRightLeft, AlertTriangle } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { listChemicals, createChemical, deleteChemical, adjustStock } from "./actions";
 import MsdsButton from "./MsdsButton";
 import { DeleteButton } from "./DeleteButton";
 import { PageHeader } from "@/components/page-header";
@@ -14,7 +15,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import {
   Table,
@@ -25,6 +25,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import {
+  type Role,
+  hasPermission,
+  OP_ROLES,
+} from "@/lib/permissions";
+import { getWarningLevel, WARNING_LEVELS } from "@/lib/warning";
 
 function CategoryBadge({ category }: { category: string }) {
   if (category === "易制爆") return <Badge variant="warning">{category}</Badge>;
@@ -46,6 +52,14 @@ export default async function ChemicalsPage({
   searchParams: Promise<{ keyword?: string; category?: string }>;
 }) {
   const { keyword, category } = await searchParams;
+  const session = await auth();
+  const role = (session?.user as { role?: string } | undefined)?.role as
+    | Role
+    | undefined;
+
+  const canManage = hasPermission(role, OP_ROLES.chemicalManage); // ADMIN
+  const canAdjust = hasPermission(role, OP_ROLES.stockAdjust); // ADMIN/WAREHOUSE
+
   const list = await listChemicals(keyword, category);
 
   return (
@@ -85,73 +99,129 @@ export default async function ChemicalsPage({
         </CardContent>
       </Card>
 
-      {/* 新增表单 */}
-      <Card>
-        <details>
-          <summary className="flex cursor-pointer list-none items-center gap-2 p-6 text-sm font-medium hover:bg-muted/40 [&::-webkit-details-marker]:hidden">
-            <Plus className="h-4 w-4" />
-            新增危化品
-          </summary>
-          <CardContent>
-            <form
-              action={createChemical}
-              className="grid grid-cols-2 gap-3 md:grid-cols-3"
-            >
-              <div className="space-y-1.5">
-                <Label htmlFor="n-name">名称</Label>
-                <Input id="n-name" name="name" placeholder="名称" required />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="n-cas">CAS 号</Label>
-                <Input id="n-cas" name="casNo" placeholder="CAS 号" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="n-cat">类别</Label>
-                <Select id="n-cat" name="category">
-                  <option value="易制毒">易制毒</option>
-                  <option value="易制爆">易制爆</option>
-                  <option value="其他">其他</option>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="n-haz">危险特性</Label>
-                <Input id="n-haz" name="hazardDesc" placeholder="危险特性" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="n-msds">MSDS 链接</Label>
-                <Input id="n-msds" name="msdsUrl" placeholder="MSDS 链接" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="n-unit">单位</Label>
-                <Input id="n-unit" name="unit" placeholder="g / mL" defaultValue="g" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="n-thr">安全阈值</Label>
-                <Input
-                  id="n-thr"
-                  name="safeThreshold"
-                  type="number"
-                  step="0.01"
-                  placeholder="安全阈值"
-                  required
-                />
-              </div>
-              <div className="flex items-end">
-                <Button type="submit" className="w-full">
-                  保存
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </details>
-      </Card>
+      {/* 库存盘点调整（管理员 / 仓库管理员） */}
+      {canAdjust && (
+        <Card>
+          <details>
+            <summary className="flex cursor-pointer list-none items-center gap-2 p-6 text-sm font-medium hover:bg-muted/40 [&::-webkit-details-marker]:hidden">
+              <ArrowRightLeft className="h-4 w-4" />
+              库存盘点调整
+            </summary>
+            <CardContent>
+              <form
+                action={adjustStock}
+                className="grid grid-cols-2 gap-3 md:grid-cols-4"
+              >
+                <div className="col-span-2 space-y-1.5 md:col-span-1">
+                  <Label htmlFor="a-id">危化品</Label>
+                  <Select id="a-id" name="id" required>
+                    <option value="">选择危化品</option>
+                    {list.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}（当前 {c.currentQuantity}
+                        {c.unit}）
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="a-qty">调整后数量</Label>
+                  <Input
+                    id="a-qty"
+                    name="currentQuantity"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="盘点实际数量"
+                    required
+                  />
+                </div>
+                <div className="col-span-2 space-y-1.5 md:col-span-1">
+                  <Label htmlFor="a-remark">调整备注</Label>
+                  <Input
+                    id="a-remark"
+                    name="remark"
+                    placeholder="如：盘点修正 / 损耗核销"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button type="submit" className="w-full">
+                    保存调整
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </details>
+        </Card>
+      )}
+
+      {/* 新增危化品（管理员） */}
+      {canManage && (
+        <Card>
+          <details>
+            <summary className="flex cursor-pointer list-none items-center gap-2 p-6 text-sm font-medium hover:bg-muted/40 [&::-webkit-details-marker]:hidden">
+              <Plus className="h-4 w-4" />
+              新增危化品
+            </summary>
+            <CardContent>
+              <form
+                action={createChemical}
+                className="grid grid-cols-2 gap-3 md:grid-cols-3"
+              >
+                <div className="space-y-1.5">
+                  <Label htmlFor="n-name">名称</Label>
+                  <Input id="n-name" name="name" placeholder="名称" required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="n-cas">CAS 号</Label>
+                  <Input id="n-cas" name="casNo" placeholder="CAS 号" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="n-cat">类别</Label>
+                  <Select id="n-cat" name="category">
+                    <option value="易制毒">易制毒</option>
+                    <option value="易制爆">易制爆</option>
+                    <option value="其他">其他</option>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="n-haz">危险特性</Label>
+                  <Input id="n-haz" name="hazardDesc" placeholder="危险特性" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="n-msds">MSDS 链接</Label>
+                  <Input id="n-msds" name="msdsUrl" placeholder="MSDS 链接" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="n-unit">单位</Label>
+                  <Input id="n-unit" name="unit" placeholder="g / mL" defaultValue="g" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="n-thr">安全阈值</Label>
+                  <Input
+                    id="n-thr"
+                    name="safeThreshold"
+                    type="number"
+                    step="0.01"
+                    placeholder="安全阈值"
+                    required
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button type="submit" className="w-full">
+                    保存
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </details>
+        </Card>
+      )}
 
       {/* 列表 */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">
-            共 {list.length} 条记录
-          </CardTitle>
+          <CardTitle className="text-sm">共 {list.length} 条记录</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -162,12 +232,14 @@ export default async function ChemicalsPage({
                 <TableHead className="text-center">类别</TableHead>
                 <TableHead className="text-center">当前库存</TableHead>
                 <TableHead className="text-center">安全阈值</TableHead>
+                <TableHead className="text-center">状态</TableHead>
                 <TableHead className="text-center">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {list.map((c) => {
-                const low = c.currentQuantity < c.safeThreshold;
+                const level = getWarningLevel(c.currentQuantity, c.safeThreshold);
+                const meta = WARNING_LEVELS[level];
                 return (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.name}</TableCell>
@@ -181,7 +253,7 @@ export default async function ChemicalsPage({
                       <span
                         className={cn(
                           "font-medium tabular-nums",
-                          low && "text-destructive",
+                          level !== "normal" && "text-destructive",
                         )}
                       >
                         {c.currentQuantity} {c.unit}
@@ -191,9 +263,23 @@ export default async function ChemicalsPage({
                       {c.safeThreshold} {c.unit}
                     </TableCell>
                     <TableCell className="text-center">
+                      <Badge variant={meta.badgeVariant}>
+                        {level === "critical" && (
+                          <AlertTriangle className="h-3 w-3" />
+                        )}
+                        {meta.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
                       <div className="inline-flex items-center gap-1">
                         <MsdsButton chemical={c} />
-                        <DeleteButton action={deleteChemical} id={c.id} name={c.name} />
+                        {canManage && (
+                          <DeleteButton
+                            action={deleteChemical}
+                            id={c.id}
+                            name={c.name}
+                          />
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -202,7 +288,7 @@ export default async function ChemicalsPage({
               {list.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="h-24 text-center text-muted-foreground"
                   >
                     暂无数据

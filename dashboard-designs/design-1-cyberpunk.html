@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>实验室危化品追溯系统 - 赛博朋克风格大屏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        body {
+            background-color: #050914;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+        #three-canvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .cyber-panel {
+            background: rgba(10, 20, 35, 0.8);
+            border: 1px solid #0ff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2), inset 0 0 20px rgba(0, 255, 255, 0.05);
+            position: relative;
+        }
+        .cyber-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 10px; height: 10px;
+            border-top: 2px solid #0ff; border-left: 2px solid #0ff;
+        }
+        .cyber-panel::after {
+            content: '';
+            position: absolute;
+            bottom: 0; right: 0; width: 10px; height: 10px;
+            border-bottom: 2px solid #0ff; border-right: 2px solid #0ff;
+        }
+        .hud-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .neon-text {
+            color: #0ff;
+            text-shadow: 0 0 5px #0ff, 0 0 10px #0ff;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen p-4 flex flex-col">
+    <canvas id="three-canvas"></canvas>
+    <!-- Header -->
+    <header class="flex justify-between items-center mb-6 cyber-panel p-4">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 flex items-center justify-center border-2 border-cyan-400 rounded-full shadow-[0_0_15px_#0ff]">
+                <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold neon-text tracking-wider">高校实验室危化品全流程追溯系统</h1>
+                <p class="text-cyan-600 text-sm hud-font mt-1">DATA VISUALIZATION DASHBOARD · CYBERPUNK HUD</p>
+            </div>
+        </div>
+        <div class="text-right">
+            <div class="hud-font text-cyan-400 text-xl" id="clock">2026-07-02 17:17:29</div>
+            <div class="text-xs text-cyan-700 uppercase tracking-widest mt-1">System Active</div>
+        </div>
+    </header>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-4 gap-4 mb-4">
+        <div class="cyber-panel p-4 flex flex-col justify-between h-24">
+            <div class="text-cyan-500 text-sm uppercase tracking-wide">危化品种类 (Total)</div>
+            <div class="flex justify-between items-end">
+                <div class="text-4xl hud-font text-white">124</div>
+                <div class="text-cyan-400 text-xs">共 3 个类别</div>
+            </div>
+        </div>
+        <div class="cyber-panel p-4 flex flex-col justify-between h-24" style="border-color: #f0f; box-shadow: 0 0 10px rgba(255, 0, 255, 0.2)">
+            <div class="text-pink-500 text-sm uppercase tracking-wide">库存预警 (Warning)</div>
+            <div class="flex justify-between items-end">
+                <div class="text-4xl hud-font text-white">12</div>
+                <div class="text-pink-400 text-xs">5 种严重不足</div>
+            </div>
+        </div>
+        <div class="cyber-panel p-4 flex flex-col justify-between h-24" style="border-color: #0f0; box-shadow: 0 0 10px rgba(0, 255, 0, 0.2)">
+            <div class="text-green-500 text-sm uppercase tracking-wide">今日入库 (Stock In)</div>
+            <div class="flex justify-between items-end">
+                <div class="text-4xl hud-font text-white">8</div>
+                <div class="text-green-400 text-xs">合计 1,250</div>
+            </div>
+        </div>
+        <div class="cyber-panel p-4 flex flex-col justify-between h-24" style="border-color: #ff0; box-shadow: 0 0 10px rgba(255, 255, 0, 0.2)">
+            <div class="text-yellow-500 text-sm uppercase tracking-wide">今日操作 (Operations)</div>
+            <div class="flex justify-between items-end">
+                <div class="text-4xl hud-font text-white">45</div>
+                <div class="text-yellow-400 text-xs">领用/归还/废弃</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 grid grid-cols-3 gap-4 min-h-0">
+        <!-- Left Column -->
+        <div class="col-span-1 flex flex-col gap-4">
+            <div class="cyber-panel p-4 flex-1 flex flex-col">
+                <h3 class="text-cyan-400 text-sm uppercase tracking-widest mb-2 border-b border-cyan-800 pb-2">类别分布</h3>
+                <div id="chart-category" class="flex-1 w-full"></div>
+            </div>
+            <div class="cyber-panel p-4 flex-1 flex flex-col">
+                <h3 class="text-pink-400 text-sm uppercase tracking-widest mb-2 border-b border-pink-900 pb-2">预警分级</h3>
+                <div id="chart-warning" class="flex-1 w-full"></div>
+            </div>
+        </div>
+        
+        <!-- Center/Right Column -->
+        <div class="col-span-2 flex flex-col gap-4">
+            <div class="cyber-panel p-4 flex-[2] flex flex-col">
+                <h3 class="text-cyan-400 text-sm uppercase tracking-widest mb-2 border-b border-cyan-800 pb-2">当前库存水平概览</h3>
+                <div id="chart-inventory" class="flex-1 w-full"></div>
+            </div>
+            <div class="cyber-panel p-4 flex-1 flex flex-col">
+                <h3 class="text-yellow-400 text-sm uppercase tracking-widest mb-2 border-b border-yellow-900 pb-2">近7日操作趋势</h3>
+                <div id="chart-trend" class="flex-1 w-full"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Log -->
+    <div class="cyber-panel p-3 mt-4 h-32 overflow-hidden flex flex-col">
+        <h3 class="text-cyan-400 text-xs uppercase tracking-widest mb-2">系统审计日志 [System Audit Logs]</h3>
+        <div class="flex-1 overflow-auto pr-2 custom-scrollbar">
+            <div class="flex flex-col gap-1">
+                <div class="flex text-xs border-l-2 border-cyan-500 pl-2 py-1 bg-cyan-900/20">
+                    <span class="w-32 text-cyan-600">17:15:22</span>
+                    <span class="w-20 text-white">张三</span>
+                    <span class="w-16 text-cyan-400">领用</span>
+                    <span class="text-cyan-200">成功领用 500ml 无水乙醇</span>
+                </div>
+                <div class="flex text-xs border-l-2 border-cyan-500 pl-2 py-1 bg-cyan-900/20">
+                    <span class="w-32 text-cyan-600">17:10:05</span>
+                    <span class="w-20 text-white">李四</span>
+                    <span class="w-16 text-cyan-400">归还</span>
+                    <span class="text-cyan-200">成功归还 200g 硝酸银</span>
+                </div>
+                <div class="flex text-xs border-l-2 border-pink-500 pl-2 py-1 bg-pink-900/20">
+                    <span class="w-32 text-pink-600">16:45:11</span>
+                    <span class="w-20 text-white">王五</span>
+                    <span class="w-16 text-pink-400">废弃</span>
+                    <span class="text-pink-200">[失败] 库存不足以废弃 1000ml 盐酸</span>
+                </div>
+                 <div class="flex text-xs border-l-2 border-cyan-500 pl-2 py-1 bg-cyan-900/20">
+                    <span class="w-32 text-cyan-600">16:30:20</span>
+                    <span class="w-20 text-white">赵六</span>
+                    <span class="w-16 text-cyan-400">入库</span>
+                    <span class="text-cyan-200">成功入库 10瓶 甲苯</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Init Echarts
+        const catChart = echarts.init(document.getElementById('chart-category'));
+        catChart.setOption({
+            tooltip: { trigger: 'item' },
+            series: [{
+                type: 'pie', radius: ['50%', '70%'],
+                itemStyle: { borderColor: '#050914', borderWidth: 2 },
+                label: { show: true, color: '#0ff', formatter: '{b}\n{c}' },
+                data: [
+                    { value: 50, name: '易制毒', itemStyle: { color: '#818cf8' } },
+                    { value: 30, name: '易制爆', itemStyle: { color: '#f59e0b' } },
+                    { value: 44, name: '其他', itemStyle: { color: '#22c55e' } }
+                ]
+            }]
+        });
+
+        const warnChart = echarts.init(document.getElementById('chart-warning'));
+        warnChart.setOption({
+            tooltip: { trigger: 'item' },
+            series: [{
+                type: 'pie', radius: ['30%', '70%'],
+                roseType: 'area',
+                itemStyle: { borderRadius: 4 },
+                label: { show: true, color: '#f0f' },
+                data: [
+                    { value: 5, name: '严重不足', itemStyle: { color: '#ef4444' } },
+                    { value: 15, name: '低于阈值', itemStyle: { color: '#f97316' } },
+                    { value: 24, name: '偏低', itemStyle: { color: '#eab308' } },
+                    { value: 80, name: '充足', itemStyle: { color: '#22c55e' } }
+                ]
+            }]
+        });
+
+        const invChart = echarts.init(document.getElementById('chart-inventory'));
+        invChart.setOption({
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+            xAxis: { type: 'value', splitLine: { lineStyle: { color: '#1e293b' } }, axisLabel: { color: '#64748b' } },
+            yAxis: { type: 'category', data: ['无水乙醇', '甲苯', '丙酮', '硝酸银', '硫酸', '盐酸'], axisLabel: { color: '#94a3b8' } },
+            series: [{
+                type: 'bar',
+                barWidth: '50%',
+                data: [
+                    { value: 500, itemStyle: { color: '#22c55e' } },
+                    { value: 300, itemStyle: { color: '#eab308' } },
+                    { value: 150, itemStyle: { color: '#f97316' } },
+                    { value: 50, itemStyle: { color: '#ef4444' } },
+                    { value: 800, itemStyle: { color: '#22c55e' } },
+                    { value: 200, itemStyle: { color: '#eab308' } }
+                ]
+            }]
+        });
+
+        const trendChart = echarts.init(document.getElementById('chart-trend'));
+        trendChart.setOption({
+            tooltip: { trigger: 'axis' },
+            grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+            xAxis: { type: 'category', boundaryGap: false, data: ['6/26', '6/27', '6/28', '6/29', '6/30', '7/1', '7/2'], axisLabel: { color: '#64748b' } },
+            yAxis: { type: 'value', splitLine: { lineStyle: { color: '#1e293b' } }, axisLabel: { color: '#64748b' } },
+            series: [
+                { name: '入库', type: 'line', smooth: true, areaStyle: { opacity: 0.1 }, lineStyle: { width: 2 }, itemStyle: { color: '#22c55e' }, data: [120, 132, 101, 134, 90, 230, 210] },
+                { name: '领用', type: 'line', smooth: true, areaStyle: { opacity: 0.1 }, lineStyle: { width: 2 }, itemStyle: { color: '#3b82f6' }, data: [220, 182, 191, 234, 290, 330, 310] },
+                { name: '废弃', type: 'line', smooth: true, areaStyle: { opacity: 0.1 }, lineStyle: { width: 2 }, itemStyle: { color: '#ef4444' }, data: [10, 20, 5, 15, 8, 12, 5] }
+            ]
+        });
+
+        window.addEventListener('resize', () => {
+            catChart.resize(); warnChart.resize(); invChart.resize(); trendChart.resize();
+        });
+
+        // Clock
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-');
+        }, 1000);
+
+        // --- Three.js Background Animation ---
+        const canvas = document.getElementById('three-canvas');
+        const scene = new THREE.Scene();
+        // Fog for cyberpunk depth
+        scene.fog = new THREE.FogExp2(0x050914, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 30;
+        camera.position.y = 10;
+
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+
+        // Add a cyber-grid floor
+        const gridHelper = new THREE.GridHelper(200, 40, 0x00ffff, 0x004444);
+        gridHelper.position.y = -10;
+        scene.add(gridHelper);
+
+        // Add some floating glowing particles
+        const geometry = new THREE.BufferGeometry();
+        const particlesCount = 800;
+        const posArray = new Float32Array(particlesCount * 3);
+        for(let i=0; i<particlesCount*3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 120;
+        }
+        geometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const material = new THREE.PointsMaterial({
+            size: 0.4,
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+        const particlesMesh = new THREE.Points(geometry, material);
+        scene.add(particlesMesh);
+
+        // Animate Three.js
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+            
+            // Rotate particles slowly
+            particlesMesh.rotation.y = elapsedTime * 0.05;
+            particlesMesh.rotation.x = elapsedTime * 0.02;
+
+            // Move grid to simulate forward movement
+            gridHelper.position.z = (elapsedTime * 10) % 5;
+            
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- GSAP Animations ---
+        // 1. Staggered entrance for all panels
+        gsap.from(".cyber-panel", {
+            duration: 1.2,
+            y: 30,
+            opacity: 0,
+            stagger: 0.1,
+            ease: "power3.out",
+            delay: 0.2
+        });
+
+        // 2. Number counting animation for the top stats
+        const statNumbers = document.querySelectorAll('.grid .text-4xl.hud-font');
+        statNumbers.forEach(el => {
+            const finalVal = parseInt(el.innerText.replace(/,/g, ''));
+            const obj = { val: 0 };
+            gsap.to(obj, {
+                val: finalVal,
+                duration: 2.5,
+                ease: "power2.out",
+                delay: 0.5,
+                onUpdate: () => {
+                    el.innerText = Math.floor(obj.val).toLocaleString();
+                }
+            });
+        });
+
+        // 3. Pulse animation for header logo
+        gsap.to("header svg", {
+            duration: 1.5,
+            scale: 1.1,
+            opacity: 0.8,
+            yoyo: true,
+            repeat: -1,
+            ease: "sine.inOut"
+        });
+    </script>
+</body>
+</html>

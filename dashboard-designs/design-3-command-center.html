@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>实验室危化品追溯系统 - 指挥中心风格大屏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Teko:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #0b111e;
+            color: #d1d5db;
+            overflow: hidden;
+            position: relative;
+        }
+        #three-canvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .num-font {
+            font-family: 'Teko', sans-serif;
+        }
+        .panel {
+            background-color: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(4px);
+            border: 1px solid #374151;
+            position: relative;
+        }
+        .panel-header {
+            background: linear-gradient(90deg, rgba(31, 41, 55, 0.8) 0%, transparent 100%);
+            border-bottom: 1px solid #374151;
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #9ca3af;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        /* Top right angled corner for panels */
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: -1px; right: -1px;
+            border-style: solid;
+            border-width: 0 15px 15px 0;
+            border-color: transparent #0b111e transparent transparent;
+        }
+        .accent-bar {
+            width: 4px;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen p-4 flex flex-col">
+    <canvas id="three-canvas"></canvas>
+    <!-- Header -->
+    <header class="flex justify-between items-end mb-4 pb-2 border-b-2 border-gray-700 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="bg-orange-500 w-10 h-10 flex items-center justify-center transform -skew-x-12">
+                <svg class="w-6 h-6 text-black transform skew-x-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-white tracking-widest">CHEM-TRACE // COMMAND CENTER</h1>
+                <p class="text-gray-400 text-xs tracking-wider mt-1">高校实验室危化品全流程追溯系统 - 控制台</p>
+            </div>
+        </div>
+        <div class="flex gap-8">
+            <div class="text-right">
+                <div class="text-gray-500 text-xs">STATUS</div>
+                <div class="text-green-500 font-bold tracking-widest">SECURE</div>
+            </div>
+            <div class="text-right">
+                <div class="text-gray-500 text-xs">LOCAL TIME</div>
+                <div class="num-font text-2xl text-white leading-none" id="clock">2026.07.02 17:17:29</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="flex-1 flex flex-col gap-4 min-h-0">
+        
+        <!-- Top Stats Row (Horizontal) -->
+        <div class="grid grid-cols-4 gap-4 h-28 shrink-0">
+            <div class="panel flex items-center justify-between p-6">
+                <div class="accent-bar bg-blue-500"></div>
+                <div>
+                    <div class="text-gray-400 text-sm tracking-widest uppercase mb-1">总危化品数量</div>
+                    <div class="text-xs text-gray-500">覆盖 3 大类别</div>
+                </div>
+                <div class="num-font text-6xl text-white leading-none">124</div>
+            </div>
+            <div class="panel flex items-center justify-between p-6">
+                <div class="accent-bar bg-orange-500"></div>
+                <div>
+                    <div class="text-gray-400 text-sm tracking-widest uppercase mb-1">库存预警状态</div>
+                    <div class="text-xs text-orange-500/80">5 种属于严重不足 (CRITICAL)</div>
+                </div>
+                <div class="num-font text-6xl text-orange-500 leading-none">12</div>
+            </div>
+            <div class="panel flex items-center justify-between p-6">
+                <div class="accent-bar bg-green-500"></div>
+                <div>
+                    <div class="text-gray-400 text-sm tracking-widest uppercase mb-1">今日入库流量</div>
+                    <div class="text-xs text-gray-500">合计入库量 1,250</div>
+                </div>
+                <div class="num-font text-6xl text-green-500 leading-none">08</div>
+            </div>
+            <div class="panel flex items-center justify-between p-6">
+                <div class="accent-bar bg-purple-500"></div>
+                <div>
+                    <div class="text-gray-400 text-sm tracking-widest uppercase mb-1">今日操作总数</div>
+                    <div class="text-xs text-gray-500">领用 / 归还 / 废弃</div>
+                </div>
+                <div class="num-font text-6xl text-purple-500 leading-none">45</div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 grid grid-cols-12 gap-4 min-h-0">
+            
+            <!-- Left Column: Big Charts (span 8) -->
+            <div class="col-span-8 flex flex-col gap-4 min-h-0">
+                <div class="panel flex-[3] flex flex-col min-h-0 relative group">
+                    <div class="panel-header flex justify-between items-center">
+                        <span>当前库存水位分析 (INVENTORY LEVELS)</span>
+                        <svg class="w-4 h-4 text-gray-600 group-hover:text-blue-500 transition-colors cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                    </div>
+                    <div id="chart-inv" class="flex-1 w-full min-h-0 p-2"></div>
+                </div>
+                
+                <div class="panel flex-[2] flex flex-col min-h-0">
+                    <div class="panel-header">7日操作趋势 (7-DAY TREND)</div>
+                    <div id="chart-trend" class="flex-1 w-full min-h-0 p-2"></div>
+                </div>
+            </div>
+
+            <!-- Right Column: Pies & Logs (span 4) -->
+            <div class="col-span-4 flex flex-col gap-4 min-h-0">
+                <!-- Two Pies Side by Side -->
+                <div class="flex gap-4 h-[220px] shrink-0">
+                    <div class="panel flex-1 flex flex-col min-h-0 min-w-0">
+                        <div class="panel-header text-xs truncate">类别分布 (CATEGORY)</div>
+                        <div id="chart-cat" class="flex-1 w-full min-h-0"></div>
+                    </div>
+                    <div class="panel flex-1 flex flex-col min-h-0 min-w-0">
+                        <div class="panel-header text-xs truncate">预警比例 (WARNING)</div>
+                        <div id="chart-warn" class="flex-1 w-full min-h-0"></div>
+                    </div>
+                </div>
+                
+                <!-- Audit Logs filling the rest of the height -->
+                <div class="panel flex-1 flex flex-col min-h-0 relative">
+                    <div class="panel-header flex justify-between items-center bg-[#1f2937]">
+                        <span>实时审计流 (AUDIT LOGS)</span>
+                        <span class="text-green-500 text-[10px] animate-pulse border border-green-500/30 bg-green-500/10 px-2 py-0.5 rounded-sm">● LIVE</span>
+                    </div>
+                    <div class="flex-1 p-0 overflow-hidden relative bg-[#0b111e]/50">
+                        <!-- Scrollable Container -->
+                        <div class="absolute inset-0 overflow-y-auto p-4 text-xs font-mono custom-scrollbar">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-gray-700/50 text-gray-500 sticky top-0 bg-[#0b111e] z-10">
+                                        <th class="py-2 pb-3 font-normal">TIME</th>
+                                        <th class="py-2 pb-3 font-normal">OP</th>
+                                        <th class="py-2 pb-3 font-normal">USER</th>
+                                        <th class="py-2 pb-3 text-right font-normal">STATUS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-gray-800/60 hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-3 text-gray-400">17:15:22</td>
+                                        <td class="py-3 text-blue-400">领用</td>
+                                        <td class="py-3 text-gray-300">张三 (Z.S)</td>
+                                        <td class="py-3 text-right"><span class="bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-sm">SUCCESS</span></td>
+                                    </tr>
+                                    <tr class="border-b border-gray-800/60 hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-3 text-gray-400">17:10:05</td>
+                                        <td class="py-3 text-purple-400">归还</td>
+                                        <td class="py-3 text-gray-300">李四 (L.S)</td>
+                                        <td class="py-3 text-right"><span class="bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-sm">SUCCESS</span></td>
+                                    </tr>
+                                    <tr class="border-b border-gray-800/60 hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-3 text-gray-400">16:45:11</td>
+                                        <td class="py-3 text-orange-400">废弃</td>
+                                        <td class="py-3 text-gray-300">王五 (W.W)</td>
+                                        <td class="py-3 text-right"><span class="bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-sm">DENIED</span></td>
+                                    </tr>
+                                    <tr class="border-b border-gray-800/60 hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-3 text-gray-400">16:30:20</td>
+                                        <td class="py-3 text-green-400">入库</td>
+                                        <td class="py-3 text-gray-300">赵六 (Z.L)</td>
+                                        <td class="py-3 text-right"><span class="bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-sm">SUCCESS</span></td>
+                                    </tr>
+                                    <tr class="border-b border-gray-800/60 hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-3 text-gray-400">16:15:00</td>
+                                        <td class="py-3 text-blue-400">领用</td>
+                                        <td class="py-3 text-gray-300">张三 (Z.S)</td>
+                                        <td class="py-3 text-right"><span class="bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-sm">SUCCESS</span></td>
+                                    </tr>
+                                    <tr class="border-b border-gray-800/60 hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-3 text-gray-400">15:55:33</td>
+                                        <td class="py-3 text-red-400">报警</td>
+                                        <td class="py-3 text-gray-400">SYSTEM</td>
+                                        <td class="py-3 text-right"><span class="bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-sm">WARNING</span></td>
+                                    </tr>
+                                    <tr class="border-b border-gray-800/60 hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-3 text-gray-400">15:30:12</td>
+                                        <td class="py-3 text-green-400">入库</td>
+                                        <td class="py-3 text-gray-300">陈七 (C.Q)</td>
+                                        <td class="py-3 text-right"><span class="bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-sm">SUCCESS</span></td>
+                                    </tr>
+                                    <tr class="border-b border-gray-800/60 hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-3 text-gray-400">14:20:45</td>
+                                        <td class="py-3 text-purple-400">归还</td>
+                                        <td class="py-3 text-gray-300">张三 (Z.S)</td>
+                                        <td class="py-3 text-right"><span class="bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-sm">SUCCESS</span></td>
+                                    </tr>
+                                    <tr class="hover:bg-white/[0.02] transition-colors">
+                                        <td class="py-3 text-gray-400">13:10:05</td>
+                                        <td class="py-3 text-orange-400">废弃</td>
+                                        <td class="py-3 text-gray-300">王五 (W.W)</td>
+                                        <td class="py-3 text-right"><span class="bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-sm">SUCCESS</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Bottom Gradient for Fade effect -->
+                        <div class="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-[#111827] to-transparent pointer-events-none"></div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        const chartOpts = {
+            textColor: '#9ca3af',
+            splitLineColor: '#374151'
+        };
+
+        const invChart = echarts.init(document.getElementById('chart-inv'));
+        invChart.setOption({
+            tooltip: { trigger: 'axis', backgroundColor: '#111827', borderColor: '#374151', textStyle: { color: '#fff' } },
+            grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+            xAxis: { type: 'value', splitLine: { lineStyle: { color: chartOpts.splitLineColor, type: 'dashed' } }, axisLabel: { color: chartOpts.textColor } },
+            yAxis: { type: 'category', data: ['无水乙醇', '甲苯', '丙酮', '硝酸银', '硫酸', '盐酸'], axisLabel: { color: chartOpts.textColor } },
+            series: [{
+                type: 'bar',
+                barWidth: '40%',
+                itemStyle: { color: '#3b82f6' },
+                data: [
+                    { value: 500, itemStyle: { color: '#10b981' } },
+                    { value: 300, itemStyle: { color: '#f59e0b' } },
+                    { value: 150, itemStyle: { color: '#f97316' } },
+                    { value: 50, itemStyle: { color: '#ef4444' } },
+                    { value: 800, itemStyle: { color: '#10b981' } },
+                    { value: 200, itemStyle: { color: '#f59e0b' } }
+                ]
+            }]
+        });
+
+        const trendChart = echarts.init(document.getElementById('chart-trend'));
+        trendChart.setOption({
+            tooltip: { trigger: 'axis', backgroundColor: '#111827', borderColor: '#374151', textStyle: { color: '#fff' } },
+            legend: { data: ['入库', '领用'], textStyle: { color: chartOpts.textColor }, top: 0, right: 0 },
+            grid: { left: '3%', right: '4%', bottom: '5%', top: '15%', containLabel: true },
+            xAxis: { type: 'category', boundaryGap: false, data: ['6/26', '6/27', '6/28', '6/29', '6/30', '7/1', '7/2'], axisLabel: { color: chartOpts.textColor } },
+            yAxis: { type: 'value', splitLine: { lineStyle: { color: chartOpts.splitLineColor, type: 'dashed' } }, axisLabel: { color: chartOpts.textColor } },
+            series: [
+                { name: '入库', type: 'line', step: 'middle', lineStyle: { width: 2, color: '#10b981' }, itemStyle: { color: '#10b981' }, data: [120, 132, 101, 134, 90, 230, 210] },
+                { name: '领用', type: 'line', step: 'middle', lineStyle: { width: 2, color: '#3b82f6' }, itemStyle: { color: '#3b82f6' }, data: [220, 182, 191, 234, 290, 330, 310] }
+            ]
+        });
+
+        const catChart = echarts.init(document.getElementById('chart-cat'));
+        catChart.setOption({
+            tooltip: { trigger: 'item', backgroundColor: '#111827', borderColor: '#374151', textStyle: { color: '#fff' } },
+            series: [{
+                type: 'pie', radius: ['40%', '70%'], center: ['50%', '55%'],
+                itemStyle: { borderColor: '#111827', borderWidth: 2 },
+                label: { show: false },
+                data: [
+                    { value: 50, name: '易制毒', itemStyle: { color: '#8b5cf6' } },
+                    { value: 30, name: '易制爆', itemStyle: { color: '#f97316' } },
+                    { value: 44, name: '其他', itemStyle: { color: '#10b981' } }
+                ]
+            }]
+        });
+
+        const warnChart = echarts.init(document.getElementById('chart-warn'));
+        warnChart.setOption({
+            tooltip: { trigger: 'item', backgroundColor: '#111827', borderColor: '#374151', textStyle: { color: '#fff' } },
+            series: [{
+                type: 'pie', radius: '70%', center: ['50%', '55%'],
+                itemStyle: { borderColor: '#111827', borderWidth: 2 },
+                label: { show: false },
+                data: [
+                    { value: 5, name: '严重不足', itemStyle: { color: '#ef4444' } },
+                    { value: 15, name: '低于阈值', itemStyle: { color: '#f97316' } },
+                    { value: 24, name: '偏低', itemStyle: { color: '#f59e0b' } },
+                    { value: 80, name: '充足', itemStyle: { color: '#10b981' } }
+                ]
+            }]
+        });
+
+        window.addEventListener('resize', () => {
+            invChart.resize(); trendChart.resize(); catChart.resize(); warnChart.resize();
+        });
+
+        // Clock
+        setInterval(() => {
+            const d = new Date();
+            const pad = n => n<10?'0'+n:n;
+            document.getElementById('clock').innerText = 
+                `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }, 1000);
+
+        // --- Three.js Background Animation ---
+        const canvas = document.getElementById('three-canvas');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x0b111e, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 30;
+        camera.position.y = 10;
+
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+
+        // Grid (blueish to match command center)
+        const gridHelper = new THREE.GridHelper(200, 40, 0x3b82f6, 0x1f2937);
+        gridHelper.position.y = -10;
+        scene.add(gridHelper);
+
+        // Particles (green to match secure status)
+        const geometry = new THREE.BufferGeometry();
+        const particlesCount = 800;
+        const posArray = new Float32Array(particlesCount * 3);
+        for(let i=0; i<particlesCount*3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 120;
+        }
+        geometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const material = new THREE.PointsMaterial({
+            size: 0.4,
+            color: 0x10b981,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+        const particlesMesh = new THREE.Points(geometry, material);
+        scene.add(particlesMesh);
+
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+            
+            particlesMesh.rotation.y = elapsedTime * 0.05;
+            particlesMesh.rotation.x = elapsedTime * 0.02;
+            gridHelper.position.z = (elapsedTime * 10) % 5;
+            
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- GSAP Animations ---
+        gsap.from(".panel", {
+            duration: 1,
+            y: 30,
+            opacity: 0,
+            stagger: 0.05,
+            ease: "power3.out",
+            delay: 0.2
+        });
+        
+        gsap.from("header", {
+            duration: 1,
+            y: -20,
+            opacity: 0,
+            ease: "power3.out"
+        });
+
+        const statNumbers = document.querySelectorAll('.num-font.text-6xl, .num-font.text-7xl');
+        statNumbers.forEach(el => {
+            const finalVal = parseInt(el.innerText.replace(/,/g, ''));
+            if(isNaN(finalVal)) return;
+            const obj = { val: 0 };
+            gsap.to(obj, {
+                val: finalVal,
+                duration: 2,
+                ease: "power2.out",
+                delay: 0.5,
+                onUpdate: () => {
+                    let text = Math.floor(obj.val).toString();
+                    if(el.innerText.startsWith('0') && text.length < 2) {
+                        text = text.padStart(2, '0');
+                    }
+                    el.innerText = text;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

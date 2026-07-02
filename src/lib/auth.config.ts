@@ -1,14 +1,19 @@
-// 边缘安全的基础认证配置（不含 Prisma）——供 middleware 使用
+// 边缘安全的基础认证配置（不含 Prisma）——供 proxy(middleware) 使用
 import type { NextAuthConfig } from "next-auth";
+import { type Role, canAccessRoute } from "@/lib/permissions";
 
 export const authConfig: NextAuthConfig = {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers: [], // Credentials provider 在 auth.ts 中注入（需 Prisma，仅 Node 运行时）
   callbacks: {
-    authorized({ auth }) {
-      // matcher 命中的业务路由：必须已登录
-      return !!auth?.user;
+    // 路由级 RBAC：未登录拒绝；已登录按角色校验可访问路由
+    authorized({ auth, request }) {
+      const user = auth?.user;
+      if (!user) return false;
+      const role = (user as { role?: string }).role as Role | undefined;
+      const pathname = request.nextUrl.pathname;
+      return canAccessRoute(role, pathname);
     },
     jwt({ token, user }) {
       if (user) token.role = (user as { role?: string }).role;

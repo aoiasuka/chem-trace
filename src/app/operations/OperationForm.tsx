@@ -1,5 +1,5 @@
 "use client";
-// 成员C：领用归还表单（含库存不足错误提示）
+// 成员C：领用归还表单（含库存不足错误提示 + 角色限制操作类型）
 import { useActionState } from "react";
 import { Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,42 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRightLeft } from "lucide-react";
+import type { Role } from "@/lib/permissions";
 
 type Chemical = { id: number; name: string; currentQuantity: number; unit: string };
+
+// 各角色可选操作类型
+const OP_OPTIONS: Record<Role, { value: string; label: string }[]> = {
+  ADMIN: [
+    { value: "领用", label: "领用" },
+    { value: "归还", label: "归还" },
+    { value: "废弃", label: "废弃（审批处置）" },
+  ],
+  WAREHOUSE: [
+    { value: "领用", label: "领用" },
+    { value: "归还", label: "归还" },
+  ],
+  RESEARCHER: [
+    { value: "领用", label: "领用" },
+    { value: "归还", label: "归还" },
+  ],
+  SAFETY: [
+    { value: "领用", label: "领用" },
+    { value: "归还", label: "归还" },
+    { value: "废弃", label: "废弃（审批处置）" },
+  ],
+};
 
 export default function OperationForm({
   chemicals,
   action,
+  role,
+  defaultOperator,
 }: {
   chemicals: Chemical[];
   action: (form: FormData) => Promise<void>;
+  role: Role;
+  defaultOperator?: string;
 }) {
   const [error, formAction, pending] = useActionState(
     async (_prev: string | undefined, form: FormData) => {
@@ -29,6 +56,8 @@ export default function OperationForm({
     },
     undefined,
   );
+
+  const options = OP_OPTIONS[role] ?? OP_OPTIONS.RESEARCHER;
 
   return (
     <Card>
@@ -54,15 +83,23 @@ export default function OperationForm({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="opType">类型</Label>
-            <Select id="opType" name="opType">
-              <option value="领用">领用</option>
-              <option value="归还">归还</option>
-              <option value="废弃">废弃</option>
+            <Select id="opType" name="opType" defaultValue={options[0]?.value}>
+              {options.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
             </Select>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="operator">领用人 / 操作人</Label>
-            <Input id="operator" name="operator" placeholder="领用人 / 操作人" required />
+            <Input
+              id="operator"
+              name="operator"
+              defaultValue={defaultOperator}
+              placeholder="领用人 / 操作人"
+              required
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="quantity">数量</Label>

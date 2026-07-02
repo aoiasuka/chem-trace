@@ -9,10 +9,13 @@ export default auth;
 
 export const config = {
   matcher: [
+    "/", // 仪表盘首页（需登录）
+    "/dashboard/:path*", // 数据可视化大屏
     "/chemicals/:path*",
     "/stock-in/:path*",
     "/operations/:path*",
     "/warning/:path*",
     "/audit/:path*",
+    "/admin/:path*", // 用户管理等管理员路由
   ],
 };

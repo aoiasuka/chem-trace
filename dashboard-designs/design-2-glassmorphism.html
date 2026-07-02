@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>实验室危化品追溯系统 - 玻璃拟物风格大屏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #f8fafc;
+            overflow: hidden;
+        }
+        /* Background decorative blobs */
+        .blob-1 { position: absolute; top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(124,58,237,0.3) 0%, transparent 70%); border-radius: 50%; filter: blur(60px); z-index: -1; }
+        .blob-2 { position: absolute; bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(14,165,233,0.2) 0%, transparent 70%); border-radius: 50%; filter: blur(80px); z-index: -1; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            border-radius: 1.5rem;
+        }
+        .stat-icon {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+    </style>
+</head>
+<body class="h-screen w-screen p-6 flex flex-col relative z-0">
+    <div class="blob-1"></div>
+    <div class="blob-2"></div>
+
+    <!-- Header -->
+    <header class="flex justify-between items-center mb-6">
+        <div class="flex items-center gap-4 glass-panel px-6 py-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">高校实验室危化品全流程追溯系统</h1>
+                <p class="text-slate-400 text-xs mt-0.5">Live Data Dashboard · Glassmorphism Theme</p>
+            </div>
+        </div>
+        <div class="glass-panel px-6 py-3 flex items-center gap-3">
+            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+            <div class="font-mono text-slate-200" id="clock">2026-07-02 17:17:29</div>
+        </div>
+    </header>
+
+    <div class="flex-1 flex gap-6 min-h-0">
+        <!-- Sidebar Stats -->
+        <div class="w-72 flex flex-col gap-4">
+            <div class="glass-panel p-5 flex-1 flex flex-col justify-center relative overflow-hidden group hover:bg-white/[0.05] transition-colors">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/20 rounded-full blur-xl group-hover:bg-blue-500/30 transition-colors"></div>
+                <div class="text-slate-400 text-sm font-medium mb-2 relative z-10">危化品种类</div>
+                <div class="text-4xl font-bold text-white mb-1 relative z-10">124</div>
+                <div class="text-slate-500 text-xs relative z-10">共 3 个类别</div>
+            </div>
+            <div class="glass-panel p-5 flex-1 flex flex-col justify-center relative overflow-hidden group hover:bg-white/[0.05] transition-colors">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-rose-500/20 rounded-full blur-xl group-hover:bg-rose-500/30 transition-colors"></div>
+                <div class="text-slate-400 text-sm font-medium mb-2 relative z-10">库存预警</div>
+                <div class="text-4xl font-bold text-white mb-1 relative z-10">12</div>
+                <div class="text-rose-400 text-xs relative z-10">5 种严重不足</div>
+            </div>
+            <div class="glass-panel p-5 flex-1 flex flex-col justify-center relative overflow-hidden group hover:bg-white/[0.05] transition-colors">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/20 rounded-full blur-xl group-hover:bg-emerald-500/30 transition-colors"></div>
+                <div class="text-slate-400 text-sm font-medium mb-2 relative z-10">今日入库</div>
+                <div class="text-4xl font-bold text-white mb-1 relative z-10">8</div>
+                <div class="text-slate-500 text-xs relative z-10">合计 1,250</div>
+            </div>
+            <div class="glass-panel p-5 flex-1 flex flex-col justify-center relative overflow-hidden group hover:bg-white/[0.05] transition-colors">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/20 rounded-full blur-xl group-hover:bg-amber-500/30 transition-colors"></div>
+                <div class="text-slate-400 text-sm font-medium mb-2 relative z-10">今日操作</div>
+                <div class="text-4xl font-bold text-white mb-1 relative z-10">45</div>
+                <div class="text-slate-500 text-xs relative z-10">领用/归还/废弃</div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Area -->
+        <div class="flex-1 flex flex-col gap-6 min-w-0">
+            <div class="flex-1 flex gap-6 min-h-0">
+                <div class="glass-panel p-5 flex-1 flex flex-col min-w-0">
+                    <h3 class="text-lg font-semibold text-white/90 mb-4 flex items-center gap-2">
+                        <span class="w-1 h-4 bg-indigo-500 rounded-full"></span>
+                        类别分布 & 预警状态
+                    </h3>
+                    <div class="flex-1 flex gap-4 min-h-0">
+                        <div id="chart-cat" class="flex-1 h-full"></div>
+                        <div id="chart-warn" class="flex-1 h-full"></div>
+                    </div>
+                </div>
+                <div class="glass-panel p-5 flex-1 flex flex-col min-w-0">
+                    <h3 class="text-lg font-semibold text-white/90 mb-4 flex items-center gap-2">
+                        <span class="w-1 h-4 bg-sky-500 rounded-full"></span>
+                        当前库存水平
+                    </h3>
+                    <div id="chart-inv" class="flex-1 h-full"></div>
+                </div>
+            </div>
+            
+            <div class="h-64 flex gap-6 shrink-0">
+                <div class="glass-panel p-5 flex-[2] flex flex-col min-w-0">
+                    <h3 class="text-lg font-semibold text-white/90 mb-4 flex items-center gap-2">
+                        <span class="w-1 h-4 bg-emerald-500 rounded-full"></span>
+                        近7日操作趋势
+                    </h3>
+                    <div id="chart-trend" class="flex-1 h-full"></div>
+                </div>
+                <div class="glass-panel p-5 flex-1 flex flex-col min-w-0">
+                    <h3 class="text-lg font-semibold text-white/90 mb-4 flex items-center gap-2">
+                        <span class="w-1 h-4 bg-purple-500 rounded-full"></span>
+                        实时动态
+                    </h3>
+                    <div class="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+                        <div class="flex justify-between items-center py-2 border-b border-white/5">
+                            <div>
+                                <div class="text-sm text-white">张三 <span class="text-xs text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded ml-2">领用</span></div>
+                                <div class="text-xs text-slate-400 mt-1">成功领用 500ml 无水乙醇</div>
+                            </div>
+                            <div class="text-xs text-slate-500">17:15</div>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-white/5">
+                            <div>
+                                <div class="text-sm text-white">李四 <span class="text-xs text-sky-400 bg-sky-400/10 px-2 py-0.5 rounded ml-2">归还</span></div>
+                                <div class="text-xs text-slate-400 mt-1">成功归还 200g 硝酸银</div>
+                            </div>
+                            <div class="text-xs text-slate-500">17:10</div>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-white/5">
+                            <div>
+                                <div class="text-sm text-white">王五 <span class="text-xs text-rose-400 bg-rose-400/10 px-2 py-0.5 rounded ml-2">废弃失败</span></div>
+                                <div class="text-xs text-slate-400 mt-1">库存不足以废弃</div>
+                            </div>
+                            <div class="text-xs text-slate-500">16:45</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Common text style
+        const textStyle = { color: '#94a3b8', fontFamily: 'Inter' };
+        
+        // Init Echarts
+        const catChart = echarts.init(document.getElementById('chart-cat'));
+        catChart.setOption({
+            tooltip: { trigger: 'item', backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', textStyle: { color: '#fff' } },
+            series: [{
+                type: 'pie', radius: ['45%', '70%'], center: ['50%', '50%'],
+                itemStyle: { borderColor: '#1e1b4b', borderWidth: 2, borderRadius: 4 },
+                label: { show: false },
+                data: [
+                    { value: 50, name: '易制毒', itemStyle: { color: '#818cf8' } },
+                    { value: 30, name: '易制爆', itemStyle: { color: '#f472b6' } },
+                    { value: 44, name: '其他', itemStyle: { color: '#34d399' } }
+                ]
+            }]
+        });
+
+        const warnChart = echarts.init(document.getElementById('chart-warn'));
+        warnChart.setOption({
+            tooltip: { trigger: 'item', backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', textStyle: { color: '#fff' } },
+            series: [{
+                type: 'pie', radius: ['20%', '75%'], center: ['50%', '50%'],
+                roseType: 'radius',
+                itemStyle: { borderRadius: 4, borderColor: '#1e1b4b', borderWidth: 2 },
+                label: { show: false },
+                data: [
+                    { value: 5, name: '严重', itemStyle: { color: '#f43f5e' } },
+                    { value: 15, name: '低于阈值', itemStyle: { color: '#f59e0b' } },
+                    { value: 24, name: '偏低', itemStyle: { color: '#eab308' } },
+                    { value: 80, name: '充足', itemStyle: { color: '#10b981' } }
+                ]
+            }]
+        });
+
+        const invChart = echarts.init(document.getElementById('chart-inv'));
+        invChart.setOption({
+            tooltip: { trigger: 'axis', backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', textStyle: { color: '#fff' } },
+            grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+            xAxis: { type: 'category', data: ['无水乙醇', '甲苯', '丙酮', '硝酸银', '硫酸'], axisLabel: textStyle, axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } } },
+            yAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)', type: 'dashed' } }, axisLabel: textStyle },
+            series: [{
+                type: 'bar',
+                barWidth: '40%',
+                itemStyle: {
+                    borderRadius: [6, 6, 0, 0],
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: '#38bdf8' },
+                        { offset: 1, color: '#818cf8' }
+                    ])
+                },
+                data: [500, 300, 150, 50, 800]
+            }]
+        });
+
+        const trendChart = echarts.init(document.getElementById('chart-trend'));
+        trendChart.setOption({
+            tooltip: { trigger: 'axis', backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', textStyle: { color: '#fff' } },
+            legend: { data: ['入库', '领用'], textStyle: { color: '#cbd5e1' }, top: 0, right: 0 },
+            grid: { left: '3%', right: '4%', bottom: '3%', top: '15%', containLabel: true },
+            xAxis: { type: 'category', boundaryGap: false, data: ['6/26', '6/27', '6/28', '6/29', '6/30', '7/1', '7/2'], axisLabel: textStyle, axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } } },
+            yAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)', type: 'dashed' } }, axisLabel: textStyle },
+            series: [
+                { name: '入库', type: 'line', smooth: true, symbol: 'none', areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0, color:'rgba(52,211,153,0.3)'},{offset:1, color:'rgba(52,211,153,0)'}]) }, lineStyle: { width: 3, color: '#34d399' }, itemStyle: { color: '#34d399' }, data: [120, 132, 101, 134, 90, 230, 210] },
+                { name: '领用', type: 'line', smooth: true, symbol: 'none', areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0, color:'rgba(129,140,248,0.3)'},{offset:1, color:'rgba(129,140,248,0)'}]) }, lineStyle: { width: 3, color: '#818cf8' }, itemStyle: { color: '#818cf8' }, data: [220, 182, 191, 234, 290, 330, 310] }
+            ]
+        });
+
+        window.addEventListener('resize', () => {
+            catChart.resize(); warnChart.resize(); invChart.resize(); trendChart.resize();
+        });
+
+        // Clock
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-');
+        }, 1000);
+    </script>
+</body>
+</html>

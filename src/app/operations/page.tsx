@@ -2,6 +2,8 @@
 import { listChemicals } from "../chemicals/actions";
 import { doOperation, listOperations } from "./actions";
 import OperationForm from "./OperationForm";
+import { auth } from "@/lib/auth";
+import { type Role } from "@/lib/permissions";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,6 +28,10 @@ function OpBadge({ type }: { type: string }) {
 }
 
 export default async function OperationsPage() {
+  const session = await auth();
+  const role = (session?.user as { role?: string } | undefined)?.role as
+    | Role
+    | undefined;
   const chemicals = await listChemicals();
   const logs = await listOperations();
 
@@ -36,7 +42,12 @@ export default async function OperationsPage() {
         description="登记领用、归还、废弃流水，自动扣减或回补库存"
       />
 
-      <OperationForm chemicals={chemicals} action={doOperation} />
+      <OperationForm
+        chemicals={chemicals}
+        action={doOperation}
+        role={role ?? "RESEARCHER"}
+        defaultOperator={session?.user?.name ?? undefined}
+      />
 
       <Card>
         <CardHeader className="pb-3">

@@ -2,6 +2,8 @@
 // 成员B：入库管理
 import { prisma } from "@/lib/prisma";
 import { withAudit } from "@/lib/audit";
+import { requireRole } from "@/lib/auth-guard";
+import { OP_ROLES } from "@/lib/permissions";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -15,6 +17,7 @@ const StockInSchema = z.object({
 
 // 入库 + 自动累加库存总量（事务保证一致）
 export const doStockIn = withAudit("增", "入库", async (form: FormData) => {
+  await requireRole(...OP_ROLES.stockIn);
   const data = StockInSchema.parse(Object.fromEntries(form));
   await prisma.$transaction([
     prisma.stockIn.create({ data }),
